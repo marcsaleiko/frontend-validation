@@ -1,0 +1,19 @@
+{
+  "name": "@marcsaleiko/frontend-validation",
+  "version": "0.0.1",
+  "description": "Simple frontend validation library",
+  "browser": "src/FrontendValidation.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marcsaleiko/frontend-validation.git"
+  },
+  "author": "Marc Saleiko",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/marcsaleiko/frontend-validation/issues"
+  },
+  "homepage": "https://github.com/marcsaleiko/frontend-validation#readme"
+}
