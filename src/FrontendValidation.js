@@ -28,7 +28,10 @@ window.FrontendValidation = (function () {
   var $nextBtn = false;
   var featureDateInputField = false;
 
-  app.init = function () {
+  app.init = function (options) {
+
+    settings = $.extend( settings, options);
+
     $requiredElements = $(settings.elementSelector);
     $conditionalElementsTrigger = $(
       settings.conditionalElementsTriggerSelector
