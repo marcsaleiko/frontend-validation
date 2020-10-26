@@ -1,2 +1,2 @@
 # FrontendValidation
-Simple frontend validation library in the making.
+Frontend validation module in the making. Documentation and refactor will follow soon.
