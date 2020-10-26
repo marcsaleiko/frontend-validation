@@ -95,22 +95,110 @@ window.FrontendValidation = (function () {
   };
 
   var onConditionalElementsTriggerChange = function (e) {
+
     var $this = $(this);
+
     var oldValid = $this.data("valid");
     if (typeof oldValid === "undefined") {
       oldValid = false;
       $this.data("valid", false);
     }
-    valid = evalElement($this);
-    if (oldValid !== valid) {
-      $conditionalElements = getConditionalElementsSelector($this);
-      if (valid) {
-        $conditionalElements.removeClass(
-          settings.conditionalElementsHiddenClass
-        );
+
+    var lastValue = $this.data('lastValue');
+    if (typeof lastValue === "undefined") {
+      lastValue = false;
+      $this.data('lastValue', '');
+    }
+
+    var valid = evalElement($this);
+
+    var $conditionalElements = false;
+    var $conditionalDeselectElements = false;
+    var type = 'text';
+    var $element = false;
+    var value = '';
+
+    // get value of element
+    if (typeof $this.data("type") !== "undefined") {
+      type = $this.data("type");
+    }
+    if( type === 'check') {
+      $element = $this.find("input:checked");
+    }
+    else if( type === 'text' ) {
+      $element = $this.find('input');
+    }
+    else if( type === 'select' ) {
+      $element = $this.find("select");
+    }
+    if( $element.length > 0 ) {
+      value = $element.val();
+    }
+
+    if (oldValid !== valid || lastValue !== value ) {
+
+      if( typeof $this.data('conditionalElementsSelector') !== 'undefined' ) {
+        $conditionalElements = getConditionalElementsSelector($this);
       } else {
-        $conditionalElements.addClass(settings.conditionalElementsHiddenClass);
+        $conditionalElements = getConditionalElementsSelector($element);
       }
+      if( typeof $this.data('conditionalElementsSelectorCallback') !== 'undefined' ) {
+        try {
+          var selectorString = window[$this.data('conditionalElementsSelectorCallback')]($this, $element);
+          if( selectorString !== '' ) {
+            $conditionalElements = $(selectorString);
+          }
+        }
+        catch (e) {
+          console.warn("Could not run callback '%o'. Skipping.", e);
+        }
+      }
+
+      if( typeof $this.data('conditionalElementsDeselector') !== 'undefined' ) {
+        $conditionalDeselectElements = getConditionalDeselectElementsSelector($this);
+      }
+      else {
+        $conditionalDeselectElements = getConditionalDeselectElementsSelector($element);
+      }
+      if( typeof $this.data('conditionalElementsDeselectorCallback') !== 'undefined' ) {
+        try {
+          var deselectorString = window[$this.data('conditionalElementsDeselectorCallback')]($this, $element);
+          if( deselectorString !== '' ) {
+            $conditionalDeselectElements = $(deselectorString);
+          }
+        }
+        catch (e) {
+          console.warn("Could not run callback '%o'. Skipping.", e);
+        }
+      }
+
+      if( typeof $conditionalDeselectElements !== 'undefined' &&
+          $conditionalDeselectElements !== false &&
+          $conditionalDeselectElements.length > 0 ) {
+        if( valid ) {
+          $conditionalDeselectElements.addClass(
+            settings.conditionalElementsHiddenClass
+          );
+          // now walk through each form field and add "ignore validation flag"
+          $conditionalDeselectElements.find(settings.elementSelector).data('forceIgnoreValidation', true);
+        }
+      }
+
+      if( typeof $conditionalElements !== 'undefined' &&
+          $conditionalElements !== false &&
+          $conditionalElements.length > 0) {
+        if (valid) {
+          $conditionalElements.removeClass(
+            settings.conditionalElementsHiddenClass
+          );
+          // now walk through each form field and remove "ignore validation flag"
+          $conditionalElements.find(settings.elementSelector).data('forceIgnoreValidation', false);
+        } else {
+          $conditionalElements.addClass(settings.conditionalElementsHiddenClass);
+
+        }
+      }
+
       // update our required fields
       evalElements();
     }
@@ -134,6 +222,12 @@ window.FrontendValidation = (function () {
         return true;
       }
     }
+    // if elements were made invisible. skip them now!
+    if( typeof $this.data('forceIgnoreValidation') !== 'undefined' &&
+      $this.data('forceIgnoreValidation') === true ) {
+      return true;
+    }
+
     var type = "text";
     var valid = false;
     var validateInput = false;
@@ -142,19 +236,21 @@ window.FrontendValidation = (function () {
     var oldValid = getLastValidDataOfElement($this);
     var oldError = getLastErrorDataOfElement($this);
     var alwaysRebuildUi = false;
-    if (typeof $this.data("type") !== "undefined") {
+    if (typeof $this.data("type") !== "undefined" && $this.data("type") !== '') {
       type = $this.data("type");
     }
-    if (typeof $this.data("validate") !== "undefined") {
+    if (typeof $this.data("validate") !== "undefined" && $this.data("validate") !== '' ) {
       validateInput = $this.data("validate");
     }
     if (type === "text") {
       var value = $this.find("input").val();
+      if( typeof value === 'string' ) {
+        value = value.trim();
+      }
       valid = value !== "";
       if (valid) {
         if (
-          validateInput === "email" &&
-          /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value) === false
+          validateInput === "email" && /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value) === false
         ) {
           error = true;
           valid = false;
@@ -177,6 +273,8 @@ window.FrontendValidation = (function () {
               var maxDate = $this.data("validateMax");
               var minDate = $this.data("validateMin");
               var needsMinMaxValidation = false;
+              var minDateValid = true;
+              var maxDateValid = true;
               if (typeof minDate !== "undefined" && minDate !== "") {
                 needsMinMaxValidation = true;
                 minDate = new Date(minDate);
@@ -185,6 +283,7 @@ window.FrontendValidation = (function () {
                 } else {
                   error = true;
                   valid = false;
+                  minDateValid = false;
                   errorHtmlOverride = "Bitte geben Sie ein früheres Datum ein";
                   if (
                     typeof $this.data("validateMinError") !== "undefined" &&
@@ -203,6 +302,7 @@ window.FrontendValidation = (function () {
                 } else {
                   error = true;
                   valid = false;
+                  maxDateValid = false;
                   errorHtmlOverride = "Das Datum liegt vor dem Referenzdatum.";
                   if (
                     typeof $this.data("validateMaxError") !== "undefined" &&
@@ -215,6 +315,14 @@ window.FrontendValidation = (function () {
               }
               if (!needsMinMaxValidation) {
                 valid = true;
+              }
+              else {
+                if( minDateValid && maxDateValid ) {
+                  valid = true;
+                }
+                else {
+                  valid = false;
+                }
               }
             } else {
               error = true;
@@ -290,11 +398,34 @@ window.FrontendValidation = (function () {
     return $req;
   };
 
+  var getConditionalDeselectElementsSelector = function ($this) {
+    if( $this === false ) { return false; }
+    var $elements = $this.data("conditionalDeselectElements");
+    if (typeof $elements === "undefined") {
+      if( typeof $this.data("conditionalElementsDeselector") !== 'undefined' ) {
+        $elements = $($this.data("conditionalElementsDeselector"));
+        $this.data("conditionalDeselectElements", $elements);
+      }
+      else {
+        $elements = $.noop();
+        $this.data("conditionalDeselectElements", $.noop());
+      }
+    }
+    return $elements;
+  };
+
   var getConditionalElementsSelector = function ($this) {
+    if( $this === false ) { return false; }
     var $elements = $this.data("conditionalElements");
     if (typeof $elements === "undefined") {
-      $elements = $($this.data("conditionalElementsSelector"));
-      $this.data("conditionalElements", $elements);
+      if( typeof $this.data("conditionalElementsSelector") !== 'undefined' ) {
+        $elements = $($this.data("conditionalElementsSelector"));
+        $this.data("conditionalElements", $elements);
+      }
+      else {
+        $elements = $.noop();
+        $this.data("conditionalElements", $.noop());
+      }
     }
     return $elements;
   };
@@ -328,17 +459,24 @@ window.FrontendValidation = (function () {
   var evalElements = function () {
     if ($requiredElements.length > 0) {
       requiredElementsCount = 0;
+      var requiredElementsIds = '';
       $requiredElements.each(function () {
         if (!evalElement($(this))) {
           requiredElementsCount++;
+          // requiredElementsIds += " "+$(this).attr('id');
         }
       });
       updateNextBtn();
     }
-    console.log("Required elements to proceed %i", requiredElementsCount);
+    console.log("Required elements to proceed %i %o", requiredElementsCount, requiredElementsIds);
   };
 
   var preflightElements = function () {
+    // also trigger conditional elements once
+    $conditionalElementsTrigger.each(function(){
+      onConditionalElementsTriggerChange.call(this);
+    });
+
     if ($requiredElements.length > 0) {
       $requiredElements.each(function () {
         var $this = $(this);
