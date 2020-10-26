@@ -1,7 +1,7 @@
 {
   "name": "@marcsaleiko/frontend-validation",
-  "version": "0.0.1",
-  "description": "Simple frontend validation library",
+  "version": "0.1.0",
+  "description": "Frontend validation module",
   "browser": "src/FrontendValidation.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
