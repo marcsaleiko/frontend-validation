@@ -1,8 +1,3 @@
-/*!
- * FrontendValidation v0.1.0
- * Frontend validation module
- * MIT License
- */
 window.FrontendValidation = (function () {
   var app = {};
   var settings = {
@@ -30,7 +25,7 @@ window.FrontendValidation = (function () {
 
   app.init = function (options) {
 
-    settings = $.extend( settings, options);
+    settings = $.extend(settings, options);
 
     $requiredElements = $(settings.elementSelector);
     $conditionalElementsTrigger = $(
@@ -244,51 +239,65 @@ window.FrontendValidation = (function () {
     var oldValid = getLastValidDataOfElement($this);
     var oldError = getLastErrorDataOfElement($this);
     var alwaysRebuildUi = false;
+    var value = '';
     if (typeof $this.data("type") !== "undefined" && $this.data("type") !== '') {
       type = $this.data("type");
     }
     if (typeof $this.data("validate") !== "undefined" && $this.data("validate") !== '' ) {
       validateInput = $this.data("validate");
     }
-    if (type === "text") {
-      var value = $this.find("input").val();
-      if( typeof value === 'string' ) {
+    if (type === "text")
+    {
+      value = $this.find("input").val();
+      if (typeof value === 'string')
+      {
         value = value.trim();
       }
       valid = value !== "";
-      if (valid) {
+      if (valid)
+      {
         if (
           validateInput === "email" && /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value) === false
-        ) {
+        )
+        {
           error = true;
           valid = false;
         }
-        if (validateInput === "iban") {
-          if (hasIBANGermanCountryCode(value) === false) {
+        if (validateInput === "iban")
+        {
+          if (hasIBANGermanCountryCode(value) === false)
+          {
             error = true;
             valid = false;
             errorHtmlOverride = "Kein deutsches Konto";
-          } else if (isValidIBANNumber(value) === false) {
+          } else if (isValidIBANNumber(value) === false)
+          {
             error = true;
             valid = false;
             errorHtmlOverride = "IBAN nicht korrekt";
           }
         }
-        if (validateInput === "date") {
+        if (validateInput === "date")
+        {
           var date = transformToDate(value);
-          if (date !== null) {
-            if (inDateRange(date)) {
+          if (date !== null)
+          {
+            if (inDateRange(date))
+            {
               var maxDate = $this.data("validateMax");
               var minDate = $this.data("validateMin");
               var needsMinMaxValidation = false;
               var minDateValid = true;
               var maxDateValid = true;
-              if (typeof minDate !== "undefined" && minDate !== "") {
+              if (typeof minDate !== "undefined" && minDate !== "")
+              {
                 needsMinMaxValidation = true;
                 minDate = new Date(minDate);
-                if (date.getTime() < minDate.getTime()) {
+                if (date.getTime() < minDate.getTime())
+                {
                   valid = true;
-                } else {
+                } else
+                {
                   error = true;
                   valid = false;
                   minDateValid = false;
@@ -296,18 +305,22 @@ window.FrontendValidation = (function () {
                   if (
                     typeof $this.data("validateMinError") !== "undefined" &&
                     $this.data("validateMinError") !== ""
-                  ) {
+                  )
+                  {
                     errorHtmlOverride = $this.data("validateMinError");
                   }
                   alwaysRebuildUi = true;
                 }
               }
-              if (typeof maxDate !== "undefined" && maxDate !== "") {
+              if (typeof maxDate !== "undefined" && maxDate !== "")
+              {
                 needsMinMaxValidation = true;
                 maxDate = new Date(maxDate);
-                if (date.getTime() > maxDate.getTime()) {
+                if (date.getTime() > maxDate.getTime())
+                {
                   valid = true;
-                } else {
+                } else
+                {
                   error = true;
                   valid = false;
                   maxDateValid = false;
@@ -315,30 +328,35 @@ window.FrontendValidation = (function () {
                   if (
                     typeof $this.data("validateMaxError") !== "undefined" &&
                     $this.data("validateMaxError") !== ""
-                  ) {
+                  )
+                  {
                     errorHtmlOverride = $this.data("validateMaxError");
                   }
                   alwaysRebuildUi = true;
                 }
               }
-              if (!needsMinMaxValidation) {
+              if (!needsMinMaxValidation)
+              {
                 valid = true;
-              }
-              else {
-                if( minDateValid && maxDateValid ) {
+              } else
+              {
+                if (minDateValid && maxDateValid)
+                {
                   valid = true;
-                }
-                else {
+                } else
+                {
                   valid = false;
                 }
               }
-            } else {
+            } else
+            {
               error = true;
               valid = false;
               errorHtmlOverride = "Kein gültiger Datumsbereich";
               alwaysRebuildUi = true;
             }
-          } else {
+          } else
+          {
             error = true;
             valid = false;
             errorHtmlOverride = "Kein gültiges Datum";
@@ -346,6 +364,9 @@ window.FrontendValidation = (function () {
           }
         }
       }
+    } else if (type === "textarea") {
+      value = $this.find('textarea').val();
+      valid = value.trim() !== '';
     } else if (type === "check") {
       // at least one checkbox/radio is checked
       valid = $this.find("input").is(":checked");
