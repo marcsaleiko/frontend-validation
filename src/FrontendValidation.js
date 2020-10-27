@@ -1,3 +1,8 @@
+/*!
+ * FrontendValidation v0.2.0
+ * Frontend validation module
+ * MIT License
+ */
 window.FrontendValidation = (function () {
   var app = {};
   var settings = {
